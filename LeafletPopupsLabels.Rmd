@@ -1,0 +1,150 @@
+---
+title: "Popups and Labels"
+output: html_document
+date: "2025-04-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Popups and Labels
+
+## Popups
+
+```{r}
+library(leaflet)
+```
+
+### Standalone
+
+```{r}
+content <- paste(sep = "<br/>",
+  "<b><a href='https://www.samurainoodle.com/'>Samurai Noodle</a></b>",
+  "606 5th Ave. S",
+  "Seattle, WA 98138"
+)
+
+leaflet() |> 
+  addTiles() |> 
+  addPopups(-122.327298, 47.597131, 
+            content, options = popupOptions(
+              closeButton = FALSE
+            ))
+```
+
+```{r}
+library(tidygeocoder)
+library(dplyr)
+
+brewery_addresses <- tibble::tribble(
+  ~name,            ~addr,
+  "La Cumbre",      "5600 Coors Blvd NW, Albuquerque, NM 87120",
+  "Sobremesa",      "3421 Coors Blvd NW, Albuquerque, NM 87120",     
+  "Flix Brewhouse", "3236 La Orilla Rd NW, Albuquerque, NM 87120",
+)
+brewery_coords <- some_addresses |> 
+  geocode(addr, method = "osm", lat = latitude, long = longitude)
+```
+
+```{r}
+rm(lat_longs)
+brewery_coords$latitude
+```
+
+```{r}
+content <- paste(sep = "<br/>",
+  "<b><a href='https://www.lacumbrebrewing.com/'>La Cumbre</a></b>",
+  "5600 Coors Blvd NW",
+  "Albuquerque, NM 87120"
+)
+leaflet() |> 
+  addTiles() |> 
+  addPopups(brewery_coords[1,]$longitude, brewery_coords[1,]$latitude, 
+            content, options = popupOptions(
+              closeButton = FALSE
+            ))
+```
+
+### on click
+
+```{r}
+library(htmltools)
+
+df <- read.csv(textConnection(
+"Name,Lat,Long
+Samurai Noodle,47.597131,-122.327298
+Kukai Ramen,47.6154,-122.327157
+Tsukushinbo,47.59987,-122.326726"
+))
+
+leaflet(df) %>% addTiles() %>%
+  addMarkers(~Long, ~Lat, popup = ~htmlEscape(Name))
+```
+
+```{r}
+leaflet(brewery_coords) |> 
+  addTiles() |> 
+  addMarkers(~longitude, ~latitude, 
+             popup = ~htmlEscape(name))
+```
+
+```{r}
+brewery_coords
+```
+
+## Labels
+
+> display on mouseover
+
+```{r}
+leaflet(df) |> 
+  addTiles() |> 
+  addMarkers(~Long, ~Lat, label = ~htmlEscape(Name))
+```
+
+```{r}
+leaflet(brewery_coords) |> 
+  addTiles() |> 
+  addMarkers(~longitude, ~latitude, label = ~htmlEscape(name))
+```
+
+### Customizing labels
+
+```{r}
+# Change Text Size and text Only and also a custom CSS
+leaflet() %>% addTiles() %>% setView(-118.456554, 34.09, 13) %>%
+  addMarkers(
+    lng = -118.456554, lat = 34.105,
+    label = "Default Label",
+    labelOptions = labelOptions(noHide = TRUE)) %>%
+  addMarkers(
+    lng = -118.456554, lat = 34.095,
+    label = "Label w/o surrounding box",
+    labelOptions = labelOptions(noHide = TRUE, textOnly = TRUE)) %>%
+  addMarkers(
+    lng = -118.456554, lat = 34.085,
+    label = "label w/ textsize 15px",
+    labelOptions = labelOptions(noHide = TRUE, textsize = "15px")) %>%
+  addMarkers(
+    lng = -118.456554, lat = 34.075,
+    label = "Label w/ custom CSS style",
+    labelOptions = labelOptions(noHide = TRUE, direction = "bottom",
+      style = list(
+        "color" = "red",
+        "font-family" = "serif",
+        "font-style" = "italic",
+        "box-shadow" = "3px 3px rgba(0,0,0,0.25)",
+        "font-size" = "12px",
+        "border-color" = "rgba(0,0,0,0.5)"
+      )))
+```
+
+### Labels without markers
+
+```{r}
+leaflet(brewery_coords) |> 
+  addTiles() |> 
+  addLabelOnlyMarkers(~longitude, ~latitude, label = ~htmlEscape(name),
+             labelOptions = labelOptions(noHide = TRUE))
+```
