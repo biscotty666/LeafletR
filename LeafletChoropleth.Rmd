@@ -1,0 +1,125 @@
+---
+title: "LeafletChoropleth"
+output: html_document
+date: "2025-04-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Leaflet Choropleth Maps
+
+## Data source
+
+```{r}
+library(sf)
+states <- read_sf("https://rstudio.github.io/leaflet/json/us-states.geojson")
+class(states)
+```
+
+```{r}
+names(states)
+```
+
+```{r}
+token = Sys.getenv('MAPBOX_ACCESS_TOKEN')
+m <- leaflet(states) |> 
+  setView(-96, 37.8, 4) |> 
+  addProviderTiles("MapBox", 
+                   options = providerTileOptions(
+                     id = "mapbox.light",
+                     accessToken = token
+                   ))
+```
+
+```{r}
+m |> addPolygons()
+```
+
+## Adding color
+
+> Color by population density
+
+1.  Define the bins
+2.  Use `colorBin()` to generate colors
+3.  Use palette function and density values to generate vector of colors for `fillColor`
+
+```{r}
+bins <- c(0, 10, 20, 50, 100, 200, 500, 1000, Inf)
+pal <- colorBin("YlOrRd", domain = states$density,
+                bins = bins)
+m |> addPolygons(
+  fillColor = ~pal(density),
+  weight = 1, 
+  opacity = 0.8,
+  color = "white", 
+  dashArray = "3",
+  fillOpacity = 0.7
+  )
+```
+
+## Interaction - highlighting
+
+```{r}
+m |> addPolygons(
+  fillColor = ~pal(density),
+  weight = 2,
+  opacity = 1,
+  color = "white",
+  dashArray = "3",
+  fillOpacity = 0.7,
+  highlightOptions = highlightOptions(
+    weight = 5,
+    color = '#666',
+    dashArray = "",
+    fillOpacity = 0.7,
+    bringToFront = T
+  ))
+```
+
+## Custom info - showing values
+
+```{r}
+labels <- sprintf(
+    "<strong>%s</strong><br/>%g people / mi<sup>2</sup>",
+  states$name, states$density
+)
+labels[1]
+```
+
+```{r}
+library(htmltools)
+labels <- labels |> lapply(HTML)
+labels[1]
+```
+
+```{r}
+m <- m %>% addPolygons(
+  fillColor = ~pal(density),
+  weight = 2,
+  opacity = 1,
+  color = "white",
+  dashArray = "3",
+  fillOpacity = 0.7,
+  highlightOptions = highlightOptions(
+    weight = 5,
+    color = "#666",
+    dashArray = "",
+    fillOpacity = 0.7,
+    bringToFront = TRUE),
+  label = labels,
+  labelOptions = labelOptions(
+    style = list("font-weight" = "normal", padding = "3px 8px"),
+    textsize = "15px",
+    direction = "auto"))
+m
+```
+
+## Legend
+
+```{r}
+m |> addLegend(pal = pal,
+               values = ~density, opacity = 0.7,
+               title = NULL, position = "bottomright")
+```
