@@ -1,0 +1,138 @@
+---
+title: "LeafletColors"
+output: html_document
+date: "2025-04-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Leaflet Colors
+
+```{r}
+library(leaflet)
+```
+
+The `color*()` functions generate *palette* functions which accept a vector of input values and returns a vector of colors.
+
+-   `colorNumeric()`
+-   `colorBin()`
+-   `colorQuantile()`
+-   `colorFactor()` \<- for categorical data
+
+```{r}
+pal <- colorNumeric(c("red", "green", "blue"), 1:10)
+pal(c(1,6,9))
+```
+
+The `palette` argument specifies the colors to map the
+data to. This argument can take one of several forms:
+
+1.  The name of a preset palette from the `RColorBrewer`
+    package, e.g., `"RdYlBu"`, `"Accent"`, or
+    `"Greens"`.
+2.  The full name of a `viridis` palette:
+    `"magma"`, `"inferno"`, `"plasma"`,
+    `"viridis"`, `"cividis"`, `"rocket"`,
+    `"mako"`, or `"turbo"`.
+3.  A character vector of RGB or named colors, e.g.,
+    [`palette()`](https://rdrr.io/r/grDevices/palette.html), `c("#000000", "#0000FF", "#FFFFFF")`,
+    `topo.colors(10)`.
+4.  A function that receives a single value between 0 and 1 and returns
+    a color, e.g.,:
+    `colorRamp(c("#000000", "#FFFFFF"), interpolate="spline")`
+
+If `domain` is set to `NULL`, the palette is generated each time. This will provide inconsistent coloring/scaling.
+
+## Continuous data
+
+```{r}
+library(sf)
+countries <- read_sf("https://rstudio.github.io/leaflet/json/countries.geojson")
+map <- leaflet(countries)
+```
+
+```{r}
+countries[1,]
+```
+
+```{r}
+hist(countries$gdp_md_est, breaks = 20, main = "")
+```
+
+```{r}
+par(mar = c(5,5,0,0), cex = 0.8)
+hist(countries$gdp_md_est, breaks = 20, main = "")
+```
+
+### Continuous input, continuous colors
+
+> `colorNumeric`
+
+While the "Blues" palette only contains nine colors, it interpolates them providing continuous colors.
+
+```{r}
+pal <- colorNumeric(
+  palette = "Blues", 
+  domain = countries$gdp_md_est
+)
+pal1 <- colorNumeric(
+  palette = c("white", "navy"), 
+  domain = countries$gdp_md_est
+)
+pal2 <- colorNumeric(
+  palette = c("#FFFFFF","#0000FF", "#000088"), 
+  domain = countries$gdp_md_est
+)
+```
+
+```{r}
+map |> 
+  addPolygons(stroke = FALSE, smoothFactor = 0.2,
+              fillOpacity = 1,
+              color = ~pal2(gdp_md_est))
+```
+
+### Continuous input, discrete colors
+
+> `colorBin()`
+>
+> Can specify number of bins or exact breakes.
+
+```{r}
+binpal <- colorBin("Blues", countries$gdp_md_est,
+                   6, pretty = FALSE)
+map |> addPolygons(
+  stroke = FALSE, 
+  smoothFactor = 0.2,
+  fillOpacity = 1,
+  color = ~binpal(gdp_md_est) 
+)
+```
+
+> `colorQuantile()` - equal number of observations
+
+```{r}
+qpal <- colorQuantile("Blues", countries$gdp_md_est,
+                      n = 7)
+map %>%
+  addPolygons(stroke = FALSE, smoothFactor = 0.2, fillOpacity = 1,
+    color = ~qpal(gdp_md_est))
+```
+
+## Categorical data
+
+If there are more factor levels than palette elements, the palette colors will be interpolated.
+
+Accepts either a factor or character vector, or the `levels` parameter.
+
+```{r}
+countries$category <- factor(sample.int(5L, nrow(countries), TRUE))
+
+factpal <- colorFactor(topo.colors(5), 
+                       countries$category)
+leaflet(countries) |> 
+  addPolygons(stroke = F, smoothFactor = 0.2,
+              fillOpacity = 1, color = ~factpal(category))
+```
