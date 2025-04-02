@@ -1,0 +1,182 @@
+---
+title: "Leaflet Markers"
+output: html_document
+date: "2025-04-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Markers
+
+```{r}
+library(leaflet)
+```
+
+## Data sources
+
+Point data for markers can come from a variety of sources:
+
+-   `POINT`, `sfc_POINT`, and `sf` objects (from the [sf](https://r-spatial.github.io/sf/) package); only `X` and
+    `Y` dimensions will be considered
+-   Two-column numeric matrices (first column is longitude, second is
+    latitude
+-   Data frame with latitude and longitude columns. You can explicitly
+    tell the marker function which columns contain the coordinate data
+    (e.g., `addMarkers(lng = ~Longitude, lat = ~Latitude)`), or
+    let the function look for columns named `lat`/`latitude` and
+    `lon`/`lng`/`long`/`longitude` (case insensitive).
+-   Simply provide numeric vectors as `lng` and
+    `lat` arguments
+
+## Icon markers
+
+```{r}
+data("quakes")
+
+leaflet(data = quakes[1:20,]) |> 
+  addTiles() |> 
+  addMarkers(~long, ~lat, 
+             popup = ~as.character(mag),
+             label = ~as.character(mag))
+```
+
+## Custom icons
+
+> `mkIcon()`
+
+```{r}
+greenLeafIcon <- makeIcon(
+  iconUrl = "https://leafletjs.com/examples/custom-icons/leaf-green.png",
+  iconWidth = 38, iconHeight = 95,
+  iconAnchorX = 22, iconAnchorY = 94,
+  shadowUrl = "https://leafletjs.com/examples/custom-icons/leaf-shadow.png",
+  shadowWidth = 50, shadowHeight = 64,
+  shadowAnchorX = 4, shadowAnchorY = 62
+)
+
+leaflet(data = quakes[1:4,]) |>  addTiles() |> 
+  addMarkers(~long, ~lat, icon = greenLeafIcon)
+```
+
+### Multiple icons
+
+```{r}
+quakes1 <- quakes[1:10,]
+
+leafIcons <- icons(
+  iconUrl = ifelse(quakes1$mag < 4.6,
+    "https://leafletjs.com/examples/custom-icons/leaf-green.png",
+    "https://leafletjs.com/examples/custom-icons/leaf-red.png"
+  ),
+  iconWidth = 38, iconHeight = 95,
+  iconAnchorX = 22, iconAnchorY = 94,
+  shadowUrl = "https://leafletjs.com/examples/custom-icons/leaf-shadow.png",
+  shadowWidth = 50, shadowHeight = 64,
+  shadowAnchorX = 4, shadowAnchorY = 62
+)
+
+leaflet(data = quakes1) |> 
+  addTiles() |> 
+  addMarkers(~long, ~lat, icon = leafIcons)
+```
+
+```{r}
+# Make a list of icons. We'll index into it based on name.
+oceanIcons <- iconList(
+  ship = makeIcon(
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Maki2-ferry-18.svg/480px-Maki2-ferry-18.svg.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Maki2-ferry-18.svg/18px-Maki2-ferry-18.svg.png",
+    18,
+    18
+  ),
+  pirate = makeIcon(
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Maki2-danger-24.svg/240px-Maki2-danger-24.svg.png",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Maki2-danger-24.svg/24px-Maki2-danger-24.svg.png",
+    24,
+    24
+  )
+)
+
+# Some fake data
+df <- sf::st_as_sf(
+  data.frame(
+    type = factor(ifelse(runif(20) > 0.75, "pirate", "ship"), c("ship", "pirate")),
+    lng = (runif(20) - .5) * 10 - 90.620130,
+    lat = (runif(20) - .5) * 3.8 + 25.638077
+  ),
+  coords = c("lng", "lat"),
+  crs = 4326
+)
+
+leaflet(df) %>% addTiles() %>%
+  # Select from oceanIcons based on df$type
+  addMarkers(icon = ~oceanIcons[type])
+```
+
+## Awesome icons
+
+> -   The `library` argument has to be one of ‘ion’, ‘fa’, or
+>     ‘glyphicon’
+> -   The `icon` argument needs to be the name of any
+>     valid icon supported by the the respective library (w/o the prefix of
+>     the library name)
+
+```{r}
+df.20 <- quakes[1:20,]
+
+getColor <- function(quakes) {
+  sapply(quakes$mag, function(mag) {
+    if(mag <= 4) {
+      "green"
+    } else if (mag <= 5) {
+      "orange"
+    } else {
+      "red"
+    }
+  })
+}
+
+icons <- awesomeIcons(
+  icon = "ios-close", 
+  iconColor = "black", 
+  library = "ion",
+  markerColor = getColor(df.20)
+)
+
+df.20 |> leaflet() |> addTiles() |> 
+  addAwesomeMarkers(~long, ~lat, icon=icons, 
+                    label = ~as.character(mag))
+```
+
+## Marker clusters
+
+```{r}
+leaflet(quakes) %>% addTiles() %>% addMarkers(
+  clusterOptions = markerClusterOptions()
+)
+```
+
+## Circle markers
+
+> Constant radius regardless of zoom level
+>
+> Default
+
+```{r}
+leaflet(df) |> addTiles() |>  addCircleMarkers()
+```
+
+> Customized
+
+```{r}
+pal <- colorFactor(c("navy", "red"), domain = c("ship", "pirate"))
+
+leaflet(df) |> addTiles() |> 
+  addCircleMarkers(
+    radius = ~ifelse(type == "ship", 6, 10),
+    color = ~pal(type),
+    stroke = FALSE, fillOpacity = 0.5
+  )
+```
