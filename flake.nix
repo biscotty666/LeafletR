@@ -23,11 +23,13 @@
             rPackages.tidyverse
             rPackages.sf
             rPackages.terra
+            rPackages.tigris
             rPackages.leaflet
             rPackages.leaflet_extras
             rPackages.leaflet_extras2
             rPackages.maps
             rPackages.leafsync
+            rPackages.rmapshaper
             rPackages.elevatr
             rPackages.patchwork
             rPackages.XML
