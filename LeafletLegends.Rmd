@@ -1,0 +1,50 @@
+---
+title: "Leaflet Legends"
+output: html_document
+date: "2025-04-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Legends
+
+```{r}
+library(leaflet)
+```
+
+```{r}
+# From http://data.okfn.org/data/datasets/geo-boundaries-world-110m
+countries <- sf::read_sf("https://rstudio.github.io/leaflet/json/countries.geojson")
+map <- leaflet(countries) |> addTiles()
+```
+
+> with `colorNumeric()`
+
+```{r}
+pal <- colorNumeric(
+  palette = "YlGnBu",
+  domain = countries$gdp_md_est
+)
+map %>%
+  addPolygons(stroke = FALSE, smoothFactor = 0.2, fillOpacity = 1,
+    color = ~pal(gdp_md_est)
+  ) %>%
+  addLegend("bottomright", pal = pal, values = ~gdp_md_est,
+    title = "Est. GDP (2010)",
+    labFormat = labelFormat(prefix = "$"),
+    opacity = 1
+  )
+```
+
+> With `quantiles()`
+
+```{r}
+qpal <- colorQuantile("RdYlBu", countries$gdp_md_est, n = 5)
+map %>%
+ addPolygons(stroke = FALSE, smoothFactor = 0.2, fillOpacity = 1,
+   color = ~qpal(gdp_md_est)
+ ) %>%
+ addLegend(pal = qpal, values = ~gdp_md_est, opacity = 1)
+```
