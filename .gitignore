@@ -2,3 +2,6 @@
 .direnv/
 .envrc
 *Rproj
+.RData
+.Rhistory
+Geocode.Rmd
