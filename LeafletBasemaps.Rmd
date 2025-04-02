@@ -1,0 +1,72 @@
+---
+title: "Leaflet Basemaps"
+output: html_document
+date: "2025-04-02"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Basemaps
+
+## Default OpenStreetMap
+
+```{r}
+library(leaflet)
+m <- leaflet() |> setView(lng = -71.0589, lat = 42.3601, zoom = 12)
+m |>  addTiles()
+```
+
+## CartoDB
+
+```{r}
+m |> addProviderTiles(providers$CartoDB.Positron)
+```
+
+## Esri
+
+```{r}
+m |> addProviderTiles(providers$Esri.NatGeoWorldMap)
+```
+
+```{r}
+m |> addProviderTiles(providers$Esri.WorldImagery)
+```
+
+## OpenTopoMap
+
+```{r}
+m |> addProviderTiles(providers$OpenTopoMap)
+```
+
+## Stadia
+
+```{r}
+m |> addProviderTiles(providers$Stadia.StamenToner)
+```
+
+## WMS (Web Map Service)
+
+```{r}
+leaflet() %>%
+  addTiles() %>%
+  setView(-93.65, 42.0285, zoom = 4) %>%
+  addWMSTiles(
+    "http://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0r.cgi",
+    layers = "nexrad-n0r-900913",
+    options = WMSTileOptions(format = "image/png", transparent = TRUE),
+    attribution = "Weather data © 2012 IEM Nexrad"
+  )
+```
+
+## Combining layers
+
+```{r}
+m |> 
+  addProviderTiles(providers$Esri.WorldImagery,
+                   options = providerTileOptions(
+                     opacity = 0.5
+                   )) |> 
+  addProviderTiles(providers$CartoDB.VoyagerOnlyLabels)
+```
